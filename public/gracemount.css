@@ -1,0 +1,20 @@
+.activity-tag-group {
+    width: 100%;
+    overflow: scroll;
+    overflow-x: scroll;
+    overflow-y:hidden
+}
+
+.hidden-span {
+    display: none;
+}
+
+.hidden-span-show {
+    display: inline;
+    background-color: powderblue;
+}
+
+.hidden-anchor-show {
+    display: inline;
+    background-color: lightblue;
+}

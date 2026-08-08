@@ -1,0 +1,16 @@
+{
+  "name": "gracemount",
+  "version": "1.0.0",
+  "description": "Tree and Plant Catalogue",
+  "dependencies": {
+    "elm": "^0.19.2-0",
+    "elm-format": "^0.8.4",
+    "elm-test": "^0.19.2-0",
+    "uglify-js": "^3.12.5"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adamboardman/gracemount.git"
+  }
+}
