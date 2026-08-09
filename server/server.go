@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -113,12 +112,10 @@ func EditorPermissionsRequiredImpl(c *gin.Context) {
 	userId := uint(claims[identityId].(float64))
 	user, err := App.Store.LoadPrivilegedUser(userId)
 	if err != nil {
-		log.Println("User not found")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "User not found"})
 		return
 	}
 	if !(user.Permissions >= store.UserPermissionsEditor) {
-		log.Println("Permissions > UserPermissionsEditor")
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"statusText": "User is not an editor"})
 		return
 	}
@@ -207,7 +204,6 @@ func UpdateUser(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"statusText": fmt.Sprintf("User details failed validation - err: %s", err.Error())})
 		return
 	}
-	log.Println(user.ID)
 
 	_, err = App.Store.UpdateUser(user)
 	if err != nil {
@@ -609,7 +605,6 @@ func LoadItem(c *gin.Context) {
 	loggedInUserId := uint(0)
 	claims := jwt.ExtractClaims(c)
 	if claims != nil && claims["id"] != nil {
-		log.Println(claims["id"])
 		loggedInUserId = uint(claims["id"].(float64))
 	}
 
@@ -664,7 +659,6 @@ func LoadItem(c *gin.Context) {
 }
 
 func ItemsList(c *gin.Context) {
-	log.Println("ItemsList")
 	loggedInUserId := uint(0)
 	claims := jwt.ExtractClaims(c)
 	if claims != nil && claims["id"] != nil {
@@ -681,7 +675,6 @@ func ItemsList(c *gin.Context) {
 }
 
 func ItemsListForRegion(c *gin.Context) {
-	log.Println("ItemsListForRegion")
 	loggedInUserId := uint(0)
 	claims := jwt.ExtractClaims(c)
 	if claims != nil && claims["id"] != nil {

@@ -206,19 +206,30 @@ func (s *Store) StoreInit() {
 		log.Fatal(err)
 	}
 
-	// We already have these created in our database from the old gorm code where they existed
-	// The new model of linking directly to an instance of the Object involves lots of extra
-	// database loading so we have rejected upgrading to that, suspect custom Exec lines will
-	// be required for any new foreign keys needed.
-
-	// db.Model(&ConceptTag{}).AddForeignKey("concept_id", "concepts(id)", "CASCADE", "RESTRICT")
-	// db.Model(&Item{}).AddForeignKey("user_id", "users(id)", "CASCADE", "RESTRICT")
-	// db.Model(&ItemLog{}).AddForeignKey("user_id", "users(id)", "CASCADE", "RESTRICT")
-	// db.Model(&ItemLog{}).AddForeignKey("item_id", "items(id)", "CASCADE", "RESTRICT")
+	s.CreateConstraintIfNotExists("concept_tags", "concept_id", "concepts", "id")
+	s.CreateConstraintIfNotExists("items", "user_id", "users", "id")
+	s.CreateConstraintIfNotExists("item_logs", "user_id", "users", "id")
+	s.CreateConstraintIfNotExists("item_logs", "item_id", "items", "id")
 
 	s.CreateTESRegion()
 	s.CreateGMDTRegion()
 	s.CreateMedicalCenterRegion()
+}
+
+func (s *Store) CreateConstraintIfNotExists(table string, field string, linked_table string, linked_field string) {
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	name := table + "_" + field + "_" + linked_table + "_" + linked_field + "_foreign"
+	result, _ := sqlDB.Exec("SELECT 1 FROM pg_constraint WHERE conname = '" + name + "';")
+	exists, _ := result.RowsAffected()
+	if exists == 0 {
+		_, err = sqlDB.Exec("ALTER TABLE " + table + " ADD CONSTRAINT " + name + " FOREIGN KEY (" + field + ") REFERENCES " + linked_table + "(" + linked_field + ") ON UPDATE RESTRICT ON DELETE CASCADE;")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Store) CreateRegionOrUpdateRegion(region Region) {
@@ -250,7 +261,7 @@ func (s *Store) CreateTESRegion() {
 					{Lat: 55.9050070, Lng: -3.1567280},
 					{Lat: 55.9048259, Lng: -3.1566927},
 					{Lat: 55.9050484, Lng: -3.1562704},
-				},//55.904520
+				},
 			},
 		},
 	}
