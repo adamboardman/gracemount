@@ -1,8 +1,8 @@
 package binary
 
-import (
-	"log"
-)
+//import (
+//	"log"
+//)
 
 type Message struct {
 	PacketTimestampMs int64
@@ -47,7 +47,7 @@ const (
 	// << Location
 	tlv_message_flags           = 0x7b // using flags for emoji support in meshtastic messages
 	tlv_message_reply_to_id     = 0x7c // indicates that the message is a reply to a former message
-	tlv_message_sender_nickname  = 0x7d // it's useful for a Channel to have direct access to the name associated with the message
+	tlv_message_sender_nickname = 0x7d // it's useful for a Channel to have direct access to the name associated with the message
 	tlv_message_channel_content = 0x7e // to avoid regular bitchat clients showing our Channel messages to everyone we omit theregular content
 	tlv_message_channel         = 0x7f // the #Channel name
 )
@@ -56,16 +56,47 @@ func (p *Message) setMalformed(m bool) {
 	p.Malformed = m
 }
 
+func hexifyNibble(nibble uint8) uint8 {
+	if nibble < 10 {
+		nibble = nibble + '0'
+	} else {
+		nibble = nibble + ('a' - 10)
+	}
+	return nibble
+
+}
+
+func hexifyData(data []uint8) string {
+	var out string
+	for _, value := range data {
+		high_nibble := hexifyNibble(uint8(value >> 4 & 15))
+		out = out + string(high_nibble)
+		low_nibble := hexifyNibble(uint8(value & 15))
+		out = out + string(low_nibble)
+	}
+	return out
+}
+
+func isPrintableASCII(data []uint8) bool {
+	for _, value := range data {
+		if value < 0x20 || value > 0x7f {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (parent *Message) ReadIn(reader *BinaryReader) {
 	version := reader.read_uint8()
-	log.Print("version:", version)
-	packet_type := reader.read_uint8()
-	log.Print("packet_type:", packet_type)
+	//log.Print("version:", version)
+	reader.read_uint8() //packet_type := reader.read_uint8()
+	//log.Print("packet_type:", packet_type)
 	reader.read_uint8() // ignore packet_ttl
 	parent.PacketTimestampMs = reader.read_int64()
-	log.Print("PacketTimestampMs: ", parent.PacketTimestampMs)
+	//log.Print("PacketTimestampMs: ", parent.PacketTimestampMs)
 	packet_flags := reader.read_uint8()
-	log.Print("packet_flags: ", packet_flags)
+	//log.Print("packet_flags: ", packet_flags)
 
 	var payload_length uint32
 	if version == 1 {
@@ -73,12 +104,12 @@ func (parent *Message) ReadIn(reader *BinaryReader) {
 	} else if version == 2 {
 		payload_length = reader.read_uint32()
 	}
-	log.Print("payload_length: ", payload_length)
+	//log.Print("payload_length: ", payload_length)
 	parent.PacketSenderId = reader.read_uint64()
-	log.Print("PacketSenderId: ", parent.PacketSenderId)
+	//log.Print("PacketSenderId: ", parent.PacketSenderId)
 	if (packet_flags & packet_flag_has_recipient) > 0 {
-		packet_recipient_id := reader.read_uint64() // ignore packet_recipient_id
-		log.Print("packet_recipient_id: ", packet_recipient_id)
+		reader.read_uint64() // ignore packet_recipient_id := reader.read_uint64()
+		//log.Print("packet_recipient_id: ", packet_recipient_id)
 	}
 	if version == 2 && (packet_flags&packet_flag_has_route) > 0 {
 		routeCount := reader.read_uint8()
@@ -91,9 +122,9 @@ func (parent *Message) ReadIn(reader *BinaryReader) {
 
 	tail := reader.read_remainder_len()
 	remainder := reader.read_remainder_len()
-	log.Print("pos: ", reader.test_only_current_pos())
-	log.Print("remainder: ", remainder)
-	log.Print("tail: ", tail)
+	//log.Print("pos: ", reader.test_only_current_pos())
+	//log.Print("remainder: ", remainder)
+	//log.Print("tail: ", tail)
 	for parent.Malformed == false && remainder > tail-payload_length {
 		data_type := reader.read_uint8()
 		data_length := reader.read_uint8()
@@ -132,7 +163,11 @@ func (parent *Message) ReadIn(reader *BinaryReader) {
 			if len(data) > 0 {
 				switch data_type {
 				case tlv_message_id:
-					parent.MessageId = string(data)
+					if isPrintableASCII(data) {
+						parent.MessageId = string(data)
+					} else {
+						parent.MessageId = hexifyData(data)
+					}
 					break
 				case tlv_message_content:
 					parent.Content = string(data)

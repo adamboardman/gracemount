@@ -89,6 +89,9 @@ itemCircle filteredItems plotterX plotterY height item =
                 ItemTypeInfrastructure ->
                     "grey"
 
+                ItemTypeSmokeDetector ->
+                    "red"
+
                 ItemTypeMax ->
                     "red"
     in

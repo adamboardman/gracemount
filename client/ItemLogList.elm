@@ -124,7 +124,7 @@ itemLogSummary model itemLog =
           else
             text " "
         , text (" Item Id: " ++ String.fromInt itemLog.itemId)
-        , text (", Date: " ++ formatDate model itemLog.date)
+        , text (", Date: " ++ formatDateTime model itemLog.date)
         , text (", Name: " ++ itemLog.name)
         , text (", Description: " ++ itemLog.description)
         , text " "
@@ -139,8 +139,8 @@ loadItemLogs : Model -> Int -> Cmd Msg
 loadItemLogs model itemId =
     Http.request
         { method = "GET"
-        , url = "/api/items" ++ String.fromInt itemId ++ "/logs"
-        , expect = Http.expectJson LoadedItems itemListDecoder
+        , url = "/api/items/" ++ String.fromInt itemId ++ "/logs"
+        , expect = Http.expectJson LoadedItemLogs itemLogListDecoder
         , headers = [ authHeader model.session.loginToken ]
         , body = emptyBody
         , timeout = Nothing
@@ -148,6 +148,6 @@ loadItemLogs model itemId =
         }
 
 
-itemListDecoder : Decoder (List Item)
-itemListDecoder =
-    list itemDecoder
+itemLogListDecoder : Decoder (List ItemLog)
+itemLogListDecoder =
+    list itemLogDecoder

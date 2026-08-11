@@ -17,6 +17,11 @@ $ sudo -u postgres psql gracetest
 gracetest=# CREATE EXTENSION postgis;
 ```
 
+Server (similar - possibly with port incase you have multiple versions of postgres from upgrades):
+```
+$ sudo -u postgres psql -p 5434 grace
+```
+
 Running the go tests or main.go the first time will create a file postgres_args.txt you should edit this file with your postgres database details:
 ```
 host=localhost port=5432 sslmode=disable user=gracetest dbname=gracetest password=[...]
@@ -84,4 +89,5 @@ $ sudo -u postgres psql gracetest
 gracetest=# \copy items(silver_number,name,description,latitude_i,longitude_i,altitude,status,age_group,height,latin_name,diameter_at,render_hints,fruit_type,cropping_season,fruit_storage,pollinating_group,rootstock) FROM '/tmp/importable_trees.csv' delimiter ',' csv header;
 gracetest=# update items set view_permissions=0 where view_permissions is null;
 gracetest=# update items set location=ST_SetSRID(ST_POINT(items.longitude_i/10000000.0,items.latitude_i/10000000.0), 4326) where location is null;
+gracetest=# update items set item_type=2 where name like '%Apple%';
 ```

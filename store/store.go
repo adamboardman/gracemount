@@ -105,6 +105,7 @@ type ItemWithOS struct {
 
 type ItemLog struct {
 	gorm.Model
+	Date        PosixDateTime `gorm:"type:timestamp with time zone"`
 	UserId      uint
 	ItemId      uint
 	UniqueId    string `gorm:"uniqueIndex"`

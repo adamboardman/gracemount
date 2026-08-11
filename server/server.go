@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -620,7 +621,7 @@ func LoadItem(c *gin.Context) {
 		return
 	}
 
-	if item.UserId != loggedInUserId {
+	if item.ViewPermissions > store.UserPermissionsNone && item.UserId != loggedInUserId {
 		user, err := App.Store.LoadPrivilegedUser(loggedInUserId)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "User not found"})
@@ -823,8 +824,11 @@ func ItemLogsList(c *gin.Context) {
 }
 
 func LoadItemLogs(c *gin.Context) {
+	loggedInUserId := uint(0)
 	claims := jwt.ExtractClaims(c)
-	loggedInUserId := uint(claims["id"].(float64))
+	if claims != nil && claims["id"] != nil {
+		loggedInUserId = uint(claims["id"].(float64))
+	}
 
 	c.Header("Content-Type", "application/json")
 
@@ -841,7 +845,7 @@ func LoadItemLogs(c *gin.Context) {
 		return
 	}
 
-	if item.UserId != loggedInUserId {
+	if item.ViewPermissions > store.UserPermissionsNone && item.UserId != loggedInUserId {
 		user, err := App.Store.LoadPrivilegedUser(loggedInUserId)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "User not found"})
@@ -854,11 +858,35 @@ func LoadItemLogs(c *gin.Context) {
 	}
 
 	itemLogs, err := App.Store.ListItemLogsForItem(uint(itemId))
+	// TODO - remove this code after testing
+	for i, _ := range itemLogs {
+		if time.Time(itemLogs[i].Date).IsZero() {
+			itemLogs[i].Date = store.PosixDateTime(itemLogs[i].CreatedAt)
+		}
+	}
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "ItemLogs not found"})
 	} else {
 		c.JSON(http.StatusOK, itemLogs)
 	}
+}
+
+func ensureMessageUserExists() *store.User {
+	emailAddress := "messages@thinkglobally.org"
+	user, err := App.Store.FindUser(emailAddress)
+	if err != nil {
+		user = &store.User{
+			PrivilegedUser: store.PrivilegedUser{
+				PublicUser: store.PublicUser{
+					Email: emailAddress,
+				},
+				Permissions: store.UserPermissionsEditor,
+				Confirmed:   true,
+			},
+		}
+		_, _ = App.Store.InsertUser(user)
+	}
+	return user
 }
 
 func ReceiveMessage(c *gin.Context) {
@@ -873,6 +901,12 @@ func ReceiveMessage(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "Invalid Message Format"})
 		return
 	}
+	var s = ""
+	for i := range len(data) {
+		s += fmt.Sprintf("%02x", data[i])
+	}
+	log.Print(s)
+
 	reader := binary.BinaryReader{
 		Offset:     0,
 		Buffer:     data,
@@ -886,6 +920,7 @@ func ReceiveMessage(c *gin.Context) {
 	if message.Malformed || message.Channel != "#smoke" {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "Invalid Message Format"})
 	} else {
+		user := ensureMessageUserExists()
 		item := &store.Item{}
 		item, err = App.Store.LoadItemBySilverNumber(message.PacketSenderId)
 		if err != nil {
@@ -895,6 +930,8 @@ func ReceiveMessage(c *gin.Context) {
 		if message.SenderNickname != "anon" {
 			item.Name = message.SenderNickname
 		}
+		item.UserId = user.ID
+		item.ItemType = 4 //SmokeDetector
 		item.LatitudeI = message.LatitudeI
 		item.LongitudeI = message.LongitudeI
 		item.Altitude = float32(message.Altitude)
@@ -904,15 +941,16 @@ func ReceiveMessage(c *gin.Context) {
 		} else {
 			itemId, err = App.Store.UpdateItem(item)
 		}
-
-		itemLog, err := App.Store.LoadItemLogByUniqueId(message.MessageId)
+		uniqueId := message.MessageId
+		itemLog, err := App.Store.LoadItemLogByUniqueId(uniqueId)
 		if err == nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "Duplicate Message"})
 			return
 		}
+		itemLog.UserId = user.ID
 		itemLog.ItemId = itemId
-		itemLog.CreatedAt = time.UnixMilli(message.PacketTimestampMs)
-		itemLog.UniqueId = message.MessageId
+		itemLog.Date = store.PosixDateTime(time.UnixMilli(message.PacketTimestampMs))
+		itemLog.UniqueId = uniqueId
 		itemLog.Name = message.Content
 
 		itemLogId, err := App.Store.InsertItemLog(itemLog)

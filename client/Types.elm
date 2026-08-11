@@ -159,6 +159,7 @@ type alias ItemLog =
     , date : Time.Posix
     , userId : Int
     , itemId : Int
+    , uniqueId : String
     , name : String
     , description : String
     }
@@ -305,6 +306,7 @@ type ItemTypeType
     | ItemTypeTree
     | ItemTypeTreeFruit
     | ItemTypeInfrastructure
+    | ItemTypeSmokeDetector
     | ItemTypeMax
 
 
@@ -805,6 +807,7 @@ emptyItemLog =
     , date = Time.millisToPosix 0
     , userId = 0
     , itemId = 0
+    , uniqueId = ""
     , name = ""
     , description = ""
     }
@@ -900,6 +903,9 @@ itemTypeFromInt int =
         3 ->
             ItemTypeInfrastructure
 
+        4 ->
+            ItemTypeSmokeDetector
+
         _ ->
             ItemTypeMax
 
@@ -928,8 +934,11 @@ itemTypeToInt itemType =
         ItemTypeInfrastructure ->
             3
 
-        ItemTypeMax ->
+        ItemTypeSmokeDetector ->
             4
+
+        ItemTypeMax ->
+            5
 
 
 itemTypeToString : ItemTypeType -> String
@@ -946,6 +955,9 @@ itemTypeToString itemType =
 
         ItemTypeInfrastructure ->
             "Infrastructure"
+
+        ItemTypeSmokeDetector ->
+            "Smoke Detector"
 
         ItemTypeMax ->
             "[Should not be displayed!]"
@@ -1082,6 +1094,7 @@ itemLogDecoder =
         |> required "Date" posixTime
         |> required "UserId" int
         |> required "ItemId" int
+        |> required "UniqueId" string
         |> required "Name" string
         |> required "Description" string
 
