@@ -7,13 +7,18 @@ import Html exposing (Html, a, div, h4, text)
 import Html.Attributes exposing (href)
 import Http exposing (emptyBody)
 import Json.Decode exposing (Decoder, list)
+import Loading
 import Types exposing (Concept, Model, Msg(..), authHeader, conceptDecoder, conceptTagsListDecoder, idFromDisplayable)
 
 
 pageConceptsList : Model -> List (Html Msg)
 pageConceptsList model =
     [ h4 [] [ text "Concepts" ]
-    , div [] (List.map (conceptSummary model) model.conceptsList)
+    , if model.loading == Loading.Off then
+        div [] (List.map (conceptSummary model) model.conceptsList)
+
+      else
+        div [] []
     , div [] (List.map viewProblem model.problems)
     ]
 

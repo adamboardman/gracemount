@@ -27,27 +27,37 @@ profileFieldsToValidate =
 
 pageProfile : Model -> List (Html Msg)
 pageProfile model =
-    [ div [ class "container page" ]
-        [ div [ class "row" ]
-            [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
-                [ h1 [ class "text-xs-center" ] [ text "Edit Profile" ]
-                , viewProfileForm model
+    [ if model.loading == Loading.Off && model.profileForm.id > 0 then
+        div [ class "container page" ]
+            [ div [ class "row" ]
+                [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
+                    [ h1 [ class "text-xs-center" ] [ text "Edit Profile" ]
+                    , viewProfileForm model
+                    ]
                 ]
             ]
-        ]
+
+      else
+        div [] []
+    , div [] (List.map viewProblem model.problems)
     ]
 
 
 pageUsersEdit : Model -> List (Html Msg)
 pageUsersEdit model =
-    [ div [ class "container page" ]
-        [ div [ class "row" ]
-            [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
-                [ h1 [ class "text-xs-center" ] [ text "Edit User" ]
-                , viewProfileForm model
+    [ if model.loading == Loading.Off && model.profileForm.id > 0 then
+        div [ class "container page" ]
+            [ div [ class "row" ]
+                [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
+                    [ h1 [ class "text-xs-center" ] [ text "Edit User" ]
+                    , viewProfileForm model
+                    ]
                 ]
             ]
-        ]
+
+      else
+        div [] []
+    , div [] (List.map viewProblem model.problems)
     ]
 
 

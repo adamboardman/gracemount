@@ -918,6 +918,7 @@ func ReceiveMessage(c *gin.Context) {
 
 	c.Header("Content-Type", "application/json")
 	if message.Malformed || message.Channel != "#smoke" {
+		log.Println("Invalid Message Format")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "Invalid Message Format"})
 	} else {
 		user := ensureMessageUserExists()
@@ -930,7 +931,10 @@ func ReceiveMessage(c *gin.Context) {
 		if message.SenderNickname != "anon" {
 			item.Name = message.SenderNickname
 		}
-		item.UserId = user.ID
+		if item.UserId == 0 {
+			// Allow the user to be set to one of the regular users when adopting an item as self
+			item.UserId = user.ID
+		}
 		item.ItemType = 4 //SmokeDetector
 		item.LatitudeI = message.LatitudeI
 		item.LongitudeI = message.LongitudeI
@@ -944,6 +948,7 @@ func ReceiveMessage(c *gin.Context) {
 		uniqueId := message.MessageId
 		itemLog, err := App.Store.LoadItemLogByUniqueId(uniqueId)
 		if err == nil {
+			log.Println("Duplicate Message")
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"statusText": "Duplicate Message"})
 			return
 		}

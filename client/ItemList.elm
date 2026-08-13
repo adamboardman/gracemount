@@ -13,6 +13,7 @@ import Http exposing (emptyBody)
 import ItemLogList exposing (itemCard)
 import Json.Decode exposing (Decoder, list)
 import List.Extra
+import Loading
 import Login exposing (userIsEditor)
 import String exposing (contains)
 import Svg exposing (Svg, circle, svg)
@@ -31,16 +32,16 @@ pageItemList model =
                 model.itemList
     in
     [ h4 [] [ text "Items" ]
-    , if model.searchRegionId > 0 then
+    , if model.loading == Loading.Off && model.searchRegionId > 0 then
         div [ id "region-plot" ] (regionPlot model filteredItemList)
 
       else
         div [] []
     , div [] (filterOptions model)
-    , if List.length filteredItemList > 1 then
+    , if model.loading == Loading.Off && List.length filteredItemList > 1 then
         div [] (List.map (itemSummary model) filteredItemList)
 
-      else if List.length filteredItemList > 0 then
+      else if model.loading == Loading.Off && List.length filteredItemList > 0 then
         itemCard (Maybe.withDefault emptyItem (List.head filteredItemList))
 
       else

@@ -129,31 +129,31 @@ func (parent *Message) ReadIn(reader *BinaryReader) {
 		data_type := reader.read_uint8()
 		data_length := reader.read_uint8()
 		if data_type == tlv_message_flags {
-			if data_length == 8 {
+			if data_length == 1 {
 				parent.message_flags = reader.read_uint8()
 			} else {
 				parent.setMalformed(true)
 			}
 		} else if data_type == tlv_message_reply_to_id {
-			if data_length == 32 {
+			if data_length == 4 {
 				parent.reply_id = reader.read_uint32()
 			} else {
 				parent.setMalformed(true)
 			}
 		} else if data_type == tlv_message_location_latitude {
-			if data_length == 32 {
+			if data_length == 4 {
 				parent.LatitudeI = reader.read_int32()
 			} else {
 				parent.setMalformed(true)
 			}
 		} else if data_type == tlv_message_location_longitude {
-			if data_length == 32 {
+			if data_length == 4 {
 				parent.LongitudeI = reader.read_int32()
 			} else {
 				parent.setMalformed(true)
 			}
 		} else if data_type == tlv_message_location_altitude {
-			if data_length == 32 {
+			if data_length == 4 {
 				parent.Altitude = reader.read_int32()
 			} else {
 				parent.setMalformed(true)

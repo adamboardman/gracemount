@@ -1012,7 +1012,7 @@ profileDecoder =
         |> required "Location" string
         |> required "Email" string
         |> required "Mobile" string
-        |> required "Permissions" userPermissionsDecoder
+        |> optional "Permissions" userPermissionsDecoder UserPermissionsNone
 
 
 conceptDecoder : Decoder Concept

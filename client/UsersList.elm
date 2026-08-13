@@ -1,10 +1,12 @@
 module UsersList exposing (..)
 
 import Bootstrap.Table as Table exposing (Row, rowAttr)
+import FormValidation exposing (viewProblem)
 import Html exposing (Html, a, h4, text)
 import Html.Attributes exposing (href, style)
 import Http exposing (emptyBody)
 import Json.Decode exposing (Decoder, list)
+import Loading
 import Types exposing (ApiActionResponse, Concept, ConceptTag, Model, Msg(..), Page(..), Problem(..), User, UserPermissionsType(..), ValidatedField(..), authHeader, userDecoder, userPermissionsToString)
 
 
@@ -46,13 +48,18 @@ pageUsersList model =
                         , Table.th [] [ text "Edit" ]
                         ]
                 , tbody =
-                    Table.tbody []
-                        (List.map
-                            (userSummary model)
-                            model.usersList
-                        )
+                    if model.loading == Loading.Off then
+                        Table.tbody []
+                            (List.map
+                                (userSummary model)
+                                model.usersList
+                            )
+
+                    else
+                        Table.tbody [] []
                 }
           , Html.br [] []
+          , Html.div [] (List.map viewProblem model.problems)
           ]
         , [ Html.br [] []
           , Html.br [] []

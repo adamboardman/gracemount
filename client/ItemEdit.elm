@@ -18,7 +18,7 @@ import Types exposing (ApiActionResponse, ConceptForm, ConceptTag, ConceptTagFor
 
 pageItemEdit : Model -> List (Html Msg)
 pageItemEdit model =
-    [ if model.loggedInUser.permissions == UserPermissionsNone || model.loggedInUser.permissions == UserPermissionsUser then
+    [ if model.loading == Loading.On || model.loggedInUser.permissions == UserPermissionsNone || model.loggedInUser.permissions == UserPermissionsUser then
         Html.br [] []
 
       else

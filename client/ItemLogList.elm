@@ -8,16 +8,21 @@ import Html exposing (Html, div, h4, text)
 import Html.Attributes exposing (class)
 import Http exposing (emptyBody)
 import Json.Decode exposing (Decoder, list)
+import Loading
 import Login exposing (userIsEditor)
 import Types exposing (..)
 
 
 pageItemLogList : Model -> Int -> List (Html Msg)
 pageItemLogList model id =
-    [ itemCard model.item
+    [ if model.loading == Loading.Off then
+        itemCard model.item
+
+      else
+        Html.div [] []
     , Html.div [] []
     , h4 [] [ text "Item Logs" ]
-    , if List.length model.itemLogList > 0 then
+    , if model.loading == Loading.Off && List.length model.itemLogList > 0 then
         div [] (List.map (itemLogSummary model) model.itemLogList)
 
       else

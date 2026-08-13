@@ -489,7 +489,12 @@ update msg model =
             )
 
         LoadedUser (Err error) ->
-            ( { model | loggedInUser = emptyUser, loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | problems = List.append model.problems serverErrors, loggedInUser = emptyUser, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -499,7 +504,12 @@ update msg model =
             )
 
         LoadedOtherUser (Err error) ->
-            ( { model | profileForm = emptyProfileForm, loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | problems = List.append model.problems serverErrors, profileForm = emptyProfileForm, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -521,7 +531,12 @@ update msg model =
             )
 
         LoadedUsers (Err error) ->
-            ( { model | loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | usersList = [], problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -531,7 +546,12 @@ update msg model =
             )
 
         LoadedProfile (Err error) ->
-            ( { model | profileForm = emptyProfileForm, loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | problems = List.append model.problems serverErrors, profileForm = emptyProfileForm, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -553,8 +573,14 @@ update msg model =
             )
 
         LoadedConcept (Err error) ->
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
             ( { model
-                | concept = emptyConcept
+                | problems = List.append model.problems serverErrors
+                , concept = emptyConcept
                 , conceptForm = emptyConceptForm
                 , loading = Loading.Off
                 , session = sessionGivenAuthError error model
@@ -601,7 +627,12 @@ update msg model =
             )
 
         LoadedConcepts (Err error) ->
-            ( { model | loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | conceptsList = [], problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -792,7 +823,12 @@ update msg model =
             ( { model | time = posix, date = dateTime }, Cmd.none )
 
         LoadedItems (Err error) ->
-            ( { model | loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | itemList = [], problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -802,7 +838,12 @@ update msg model =
             )
 
         LoadedRegions (Err error) ->
-            ( { model | regionList = Nothing, loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | problems = List.append model.problems serverErrors, regionList = Nothing, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -812,7 +853,12 @@ update msg model =
             )
 
         LoadedItemLogs (Err error) ->
-            ( { model | loading = Loading.Off, session = sessionGivenAuthError error model }
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
+            ( { model | problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
@@ -946,8 +992,14 @@ update msg model =
 
         --AddedItemLog result ->
         LoadedItem (Err error) ->
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+            in
             ( { model
-                | item = emptyItem
+                | problems = List.append model.problems serverErrors
+                , item = emptyItem
                 , itemForm = emptyItemForm
                 , loading = Loading.Off
                 , session = sessionGivenAuthError error model
@@ -1133,7 +1185,35 @@ urlUpdate url model =
                     { model
                         | page = page
                         , itemListFilter = ""
+                        , loading = Loading.On
                     }
+
+                Profile ->
+                    { model | page = page, loading = Loading.On }
+
+                Home ->
+                    { model | page = page, loading = Loading.On }
+
+                Concepts _ ->
+                    { model | page = page, loading = Loading.On }
+
+                ConceptsEdit _ ->
+                    { model | page = page, loading = Loading.On }
+
+                ConceptsList ->
+                    { model | page = page, loading = Loading.On }
+
+                ItemLogList _ ->
+                    { model | page = page, loading = Loading.On }
+
+                ItemEdit _ ->
+                    { model | page = page, loading = Loading.On }
+
+                UsersList ->
+                    { model | page = page, loading = Loading.On }
+
+                UsersEdit string ->
+                    { model | page = page, loading = Loading.On }
 
                 _ ->
                     { model | page = page }
