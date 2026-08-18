@@ -48,6 +48,9 @@ type alias Model =
     , item : Item
     , itemLog : ItemLog
     , itemList : List Item
+    , itemListStale : Bool
+    , itemListForRegion : Dict Int (List Item)
+    , itemListForRegionStale : Dict Int Bool
     , itemListFilter : String
     , itemLogList : List ItemLog
     , itemForm : ItemForm
@@ -388,6 +391,7 @@ type Msg
       --| AddedItemLog (Result Http.Error ApiActionResponse)
     | LoadedItem (Result Http.Error Item)
     | LoadedItems (Result Http.Error (List Item))
+    | LoadedItemsForRegion (Result Http.Error (List Item))
     | LoadedItemLogs (Result Http.Error (List ItemLog))
     | LoadedRegions (Result Http.Error (List Region))
     | FilterByRegion

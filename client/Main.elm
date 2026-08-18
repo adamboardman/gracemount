@@ -10,8 +10,9 @@ import Concept exposing (pageConcept)
 import ConceptsEdit exposing (conceptAdd, conceptDeleteSelectedTags, conceptTag, conceptTagUpdateForm, conceptTagValidate, conceptUpdate, conceptUpdateForm, conceptValidate, loadConceptById, loadConceptTagsById, pageAddConcept, pageConceptsEdit, tagIsNotIn)
 import ConceptsList exposing (loadConceptTagsList, loadConcepts, pageConceptsList)
 import Date
+import Dict
 import Html exposing (Html, div, h1, text)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Http exposing (Error(..), emptyBody)
 import Iso8601
 import ItemEdit exposing (itemAdd, itemUpdate, itemUpdateForm, pageAddItem, pageItemEdit)
@@ -92,6 +93,9 @@ init flags url key =
                 , item = emptyItem
                 , itemForm = emptyItemForm
                 , itemList = []
+                , itemListStale = False
+                , itemListForRegion = Dict.empty
+                , itemListForRegionStale = Dict.empty
                 , itemListFilter = ""
                 , itemLog = emptyItemLog
                 , itemLogForm = emptyItemLogForm
@@ -131,78 +135,105 @@ view model =
 
 menu : Model -> Html Msg
 menu model =
+    let
+        menuConcepts =
+            if loggedIn model && userIsEditor model then
+                [ if model.page == ConceptsList then
+                    Navbar.itemLinkActive [ href (urlForPage ConceptsList) ] [ text "Concepts" ]
+
+                  else
+                    Navbar.itemLink [ href (urlForPage ConceptsList) ] [ text "Concepts" ]
+                ]
+
+            else
+                []
+
+        menuItems =
+            [ if model.page == ItemList then
+                Navbar.itemLinkActive [ href (urlForPage ItemList) ] [ text "Items" ]
+
+              else
+                Navbar.itemLink [ href (urlForPage ItemList) ] [ text "Items" ]
+            ]
+
+        menuItemsStale =
+            if model.itemListStale || Dict.member model.searchRegionId model.itemListForRegionStale then
+                [ Navbar.itemLink []
+                    [ Html.img
+                        [ Html.Attributes.src "public/no-internet.svg"
+                        , Html.Attributes.attribute "description" "Stale Content"
+                        ]
+                        []
+                    ]
+                ]
+
+            else
+                []
+
+        menuAdd =
+            if loggedIn model && userIsEditor model then
+                [ Navbar.dropdown
+                    { id = "items_dropdown"
+                    , toggle = Navbar.dropdownToggle [] [ text "Add" ]
+                    , items =
+                        [ Navbar.dropdownItem
+                            [ href (urlForPage AddConcept) ]
+                            [ text "Add Concept" ]
+                        , Navbar.dropdownItem
+                            [ href (urlForPage AddItem) ]
+                            [ text "Add Item" ]
+
+                        --, Navbar.dropdownItem
+                        --    [ href (urlForPage AddItemLog) ]
+                        --    [ text "Add Item Log" ]
+                        ]
+                    }
+                ]
+
+            else
+                []
+
+        menuUsers =
+            if loggedIn model && userIsAdmin model then
+                [ if model.page == UsersList then
+                    Navbar.itemLinkActive [ href (urlForPage UsersList) ] [ text "Users" ]
+
+                  else
+                    Navbar.itemLink [ href (urlForPage UsersList) ] [ text "Users" ]
+                ]
+
+            else
+                []
+
+        menuProfile =
+            if loggedIn model then
+                [ if model.page == Profile then
+                    Navbar.itemLinkActive [ href (urlForPage Profile) ] [ text "Profile" ]
+
+                  else
+                    Navbar.itemLink [ href (urlForPage Profile) ] [ text "Profile" ]
+                ]
+
+            else
+                []
+
+        menuLog =
+            if loggedIn model then
+                [ Navbar.itemLink [ href (urlForPage Logout) ] [ text "Logout" ] ]
+
+            else
+                [ Navbar.itemLink [ href (urlForPage Login) ] [ text "Login" ] ]
+
+        fullMenu =
+            menuConcepts ++ menuItems ++ menuItemsStale ++ menuAdd ++ menuUsers ++ menuProfile ++ menuLog
+    in
     case model.navState of
         Just navState ->
             Navbar.config NavMsg
                 |> Navbar.withAnimation
                 --|> Navbar.container
                 |> Navbar.brand [ href (urlForPage Home) ] [ text "Gracemount" ]
-                |> Navbar.items
-                    [ if userIsEditor model then
-                        Navbar.dropdown
-                            { id = "concepts_dropdown"
-                            , toggle = Navbar.dropdownToggle [] [ text "Concepts" ]
-                            , items =
-                                [ Navbar.dropdownItem
-                                    [ href (urlForPage ConceptsList) ]
-                                    [ text "Concepts" ]
-                                , Navbar.dropdownItem
-                                    [ href (urlForPage AddConcept) ]
-                                    [ text "Add Concept" ]
-                                ]
-                            }
-
-                      else
-                        Navbar.itemLink [] [ text "" ]
-                    , if userIsEditor model then
-                        Navbar.dropdown
-                            { id = "items_dropdown"
-                            , toggle = Navbar.dropdownToggle [] [ text "Items" ]
-                            , items =
-                                [ Navbar.dropdownItem
-                                    [ href (urlForPage ItemList) ]
-                                    [ text "Items" ]
-                                , Navbar.dropdownItem
-                                    [ href (urlForPage AddItem) ]
-                                    [ text "Add Item" ]
-
-                                --, Navbar.dropdownItem
-                                --    [ href (urlForPage ItemLogList) ]
-                                --    [ text "Item Logs" ]
-                                --, Navbar.dropdownItem
-                                --    [ href (urlForPage AddItemLog) ]
-                                --    [ text "Add Item Log" ]
-                                ]
-                            }
-
-                      else
-                        Navbar.itemLink [] [ text "" ]
-                    , if loggedIn model then
-                        if userIsAdmin model then
-                            Navbar.dropdown
-                                { id = "users_dropdown"
-                                , toggle = Navbar.dropdownToggle [] [ text "Users" ]
-                                , items =
-                                    [ Navbar.dropdownItem
-                                        [ href (urlForPage UsersList) ]
-                                        [ text "Users" ]
-                                    , Navbar.dropdownItem
-                                        [ href (urlForPage Profile) ]
-                                        [ text "Profile" ]
-                                    ]
-                                }
-
-                        else
-                            Navbar.itemLink [ href (urlForPage Profile) ] [ text "Profile" ]
-
-                      else
-                        Navbar.itemLink [] [ text "" ]
-                    , if loggedIn model then
-                        Navbar.itemLink [ href (urlForPage Logout) ] [ text "Logout" ]
-
-                      else
-                        Navbar.itemLink [ href (urlForPage Login) ] [ text "Login" ]
-                    ]
+                |> Navbar.items fullMenu
                 |> Navbar.view navState
 
         Nothing ->
@@ -687,7 +718,7 @@ update msg model =
                     , tags = conceptFormTags
                     }
             in
-            ( { model | conceptForm = conceptForm, loading = Loading.Off }
+            ( { model | conceptForm = conceptForm, problems = [], loading = Loading.Off }
             , Cmd.none
             )
 
@@ -828,12 +859,37 @@ update msg model =
                     decodeErrors error
                         |> List.map ServerError
             in
-            ( { model | itemList = [], problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
+            ( { model | itemListStale = True, problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
             , Cmd.none
             )
 
         LoadedItems (Ok res) ->
-            ( { model | itemList = res, loading = Loading.Off }
+            ( { model | itemList = res, itemListStale = False, problems = [], loading = Loading.Off }
+            , Cmd.none
+            )
+
+        LoadedItemsForRegion (Err error) ->
+            let
+                serverErrors =
+                    decodeErrors error
+                        |> List.map ServerError
+
+                newItemsStaleDict =
+                    Dict.insert model.searchRegionId True model.itemListForRegionStale
+            in
+            ( { model | itemListForRegionStale = newItemsStaleDict, problems = List.append model.problems serverErrors, loading = Loading.Off, session = sessionGivenAuthError error model }
+            , Cmd.none
+            )
+
+        LoadedItemsForRegion (Ok res) ->
+            let
+                newItemsDict =
+                    Dict.insert model.searchRegionId res model.itemListForRegion
+
+                newItemsStaleDict =
+                    Dict.remove model.searchRegionId model.itemListForRegionStale
+            in
+            ( { model | itemListForRegion = newItemsDict, itemListForRegionStale = newItemsStaleDict, problems = [], loading = Loading.Off }
             , Cmd.none
             )
 

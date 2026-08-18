@@ -5,6 +5,7 @@ import Bootstrap.Form.Select as Select
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
 import Bootstrap.Grid.Row as Row
+import Dict
 import FormValidation exposing (viewProblem)
 import Html exposing (Html, a, div, h4, input, text)
 import Html.Attributes exposing (class, href, id, placeholder, value)
@@ -24,16 +25,23 @@ import Types exposing (..)
 pageItemList : Model -> List (Html Msg)
 pageItemList model =
     let
-        filteredItemList =
-            if String.length model.itemListFilter > 0 then
-                List.filterMap (removeUnmatched model.itemListFilter) model.itemList
+        itemList =
+            if model.searchRegionId == 0 then
+                model.itemList
 
             else
-                model.itemList
+                Maybe.withDefault [] (Dict.get model.searchRegionId model.itemListForRegion)
+
+        filteredItemList =
+            if String.length model.itemListFilter > 0 then
+                List.filterMap (removeUnmatched model.itemListFilter) itemList
+
+            else
+                itemList
     in
     [ h4 [] [ text "Items" ]
     , if model.loading == Loading.Off && model.searchRegionId > 0 then
-        div [ id "region-plot" ] (regionPlot model filteredItemList)
+        div [ id "region-plot" ] (regionPlot model itemList filteredItemList)
 
       else
         div [] []
@@ -112,20 +120,20 @@ plotter min multiplier margin pos =
     margin + (pos - min) * multiplier
 
 
-regionPlot : Model -> List Item -> List (Html Msg)
-regionPlot model filteredItems =
+regionPlot : Model -> List Item -> List Item -> List (Html Msg)
+regionPlot model itemList filteredItems =
     let
         maxX =
-            Maybe.withDefault 0 (List.maximum (List.map osgbEasting model.itemList))
+            Maybe.withDefault 0 (List.maximum (List.map osgbEasting itemList))
 
         minX =
-            Maybe.withDefault 0 (List.minimum (List.map osgbEasting model.itemList))
+            Maybe.withDefault 0 (List.minimum (List.map osgbEasting itemList))
 
         maxY =
-            Maybe.withDefault 0 (List.maximum (List.map osgbNorthing model.itemList))
+            Maybe.withDefault 0 (List.maximum (List.map osgbNorthing itemList))
 
         minY =
-            Maybe.withDefault 0 (List.minimum (List.map osgbNorthing model.itemList))
+            Maybe.withDefault 0 (List.minimum (List.map osgbNorthing itemList))
 
         diffX =
             maxX - minX
@@ -158,7 +166,7 @@ regionPlot model filteredItems =
         [ viewBox ("0 0 " ++ String.fromFloat w ++ " " ++ String.fromFloat h)
         , width "100%"
         ]
-        (List.map (itemCircle filteredItems plotterX plotterY h) model.itemList)
+        (List.map (itemCircle filteredItems plotterX plotterY h) itemList)
     ]
 
 
@@ -287,7 +295,7 @@ loadItemsForRegion model =
     Http.request
         { method = "GET"
         , url = "/api/items_for_region/" ++ String.fromInt model.searchRegionId
-        , expect = Http.expectJson LoadedItems itemListDecoder
+        , expect = Http.expectJson LoadedItemsForRegion itemListDecoder
         , headers = [ authHeader model.session.loginToken ]
         , body = emptyBody
         , timeout = Nothing

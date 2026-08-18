@@ -2,6 +2,7 @@ module Concept exposing (pageConcept)
 
 import FormValidation exposing (viewProblem)
 import Html exposing (Html, div, h4, text)
+import Html.Attributes
 import ItemList exposing (filterOptions)
 import Markdown
 import Types exposing (Concept, ConceptTag, DisplayableTag, Model, Msg(..), Tag)
@@ -22,6 +23,12 @@ pageConcept model =
         Nothing ->
             div [] []
     , div [] (List.map viewProblem model.problems)
+    , Html.img
+        [ Html.Attributes.src "public/no-internet.svg"
+        , Html.Attributes.height 0
+        , Html.Attributes.width 0
+        ]
+        []
     ]
 
 
