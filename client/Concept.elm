@@ -23,12 +23,6 @@ pageConcept model =
         Nothing ->
             div [] []
     , div [] (List.map viewProblem model.problems)
-    , Html.img
-        [ Html.Attributes.src "public/no-internet.svg"
-        , Html.Attributes.height 0
-        , Html.Attributes.width 0
-        ]
-        []
     ]
 
 

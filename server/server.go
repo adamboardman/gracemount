@@ -13,7 +13,6 @@ import (
 	"github.com/adamboardman/gracemount/store"
 	"github.com/adamboardman/gracemount/tag_updater"
 	jwt "github.com/appleboy/gin-jwt/v3"
-	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -144,7 +143,6 @@ func (a *WebApp) Run(addr string) {
 
 func addWebAppStaticFiles(router *gin.Engine) {
 	router.Static("/public", "./public")
-	router.Use(static.Serve("/dist", static.LocalFile("./dist", true)))
 }
 
 func LoadUsers(c *gin.Context) {
